@@ -1,0 +1,55 @@
+name: Build APK
+
+# Ye har baar chalega jab code push/change hoga,
+# ya "Actions" tab se manually "Run workflow" dabane par.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code lao
+        uses: actions/checkout@v4
+
+      - name: Java setup
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Node setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Dependencies install karo
+        run: npm install
+
+      - name: Android platform add karo
+        run: npx cap add android || npx cap sync android
+
+      - name: Camera permission daalo
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          if ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
+            sed -i 's#<application#<uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n\n    <application#' "$MANIFEST"
+          fi
+
+      - name: Web code sync
+        run: npx cap sync android
+
+      - name: APK build karo
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK ko download ke liye rakho
+        uses: actions/upload-artifact@v4
+        with:
+          name: dukaan-khata-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
