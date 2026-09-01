@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f1b2d">
+<title>Dukaan Khata</title>
+<link rel="manifest" href="data:application/json,{%22name%22:%22Dukaan%20Khata%22,%22short_name%22:%22Khata%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230f1b2d%22,%22theme_color%22:%22%230f1b2d%22}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1b2d; --surface:#16273f; --surface2:#1e3251;
+    --line:#2c4468; --ink:#eaf1fb; --muted:#8ba3c7; --accent:#3ddc97;
+    --accent-ink:#04321f; --warn:#ffb454; --danger:#ff6b6b; --upi:#7c9cff;
+    --radius:14px; --tap:52px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    padding-bottom:calc(var(--tap) + env(safe-area-inset-bottom) + 22px);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{margin:0}
+  button{font-family:inherit}
+  .wrap{max-width:520px;margin:0 auto;padding:0 14px}
+
+  header{
+    position:sticky;top:0;z-index:20;background:rgba(15,27,45,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+    padding:calc(env(safe-area-inset-top) + 12px) 0 12px;
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:9px;background:var(--accent);
+    display:grid;place-items:center;color:var(--accent-ink);font-weight:800;font-size:18px}
+  .brand h1{font-size:19px;letter-spacing:.2px}
+  .brand small{display:block;color:var(--muted);font-size:11px;font-weight:600;margin-top:1px}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 10px}
+  .stat b{display:block;font-size:20px;line-height:1.1}
+  .stat span{color:var(--muted);font-size:11px;font-weight:600}
+  .stat.green b{color:var(--accent)} .stat.red b{color:var(--danger)}
+
+  .panel{display:none} .panel.active{display:block;animation:in .18s ease}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .sectiontitle{display:flex;justify-content:space-between;align-items:center;margin:6px 0 12px}
+  .sectiontitle h2{font-size:16px}
+  .count{color:var(--muted);font-size:12px;font-weight:600}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:12px}
+  label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin:0 0 5px}
+  .field{margin-bottom:12px}
+  input,select,textarea{
+    width:100%;background:var(--surface2);border:1px solid var(--line);color:var(--ink);
+    border-radius:11px;padding:13px 12px;font-size:15px;outline:none;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .imei-field{display:flex;gap:8px}
+  .imei-field input{flex:1}
+  .scanbtn{width:var(--tap);min-width:var(--tap);border:none;border-radius:11px;
+    background:var(--accent);color:var(--accent-ink);font-size:22px;font-weight:700}
+  .btn{width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;
+    background:var(--accent);color:var(--accent-ink)}
+  .btn.sec{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+  .btn:active{transform:scale(.98)}
+
+  .seg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:4px;gap:4px}
+  .seg button{flex:1;border:none;background:transparent;color:var(--muted);font-weight:700;
+    padding:11px;border-radius:8px;font-size:14px}
+  .seg button.on{background:var(--accent);color:var(--accent-ink)}
+  .seg.pay button.on[data-v="UPI"]{background:var(--upi);color:#08122e}
+  .seg.pay button.on[data-v="Udhaar"]{background:var(--warn);color:#3a2600}
+
+  .item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px;margin-bottom:10px}
+  .item .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .item .model{font-weight:700;font-size:15px}
+  .item .imei{font-family:ui-monospace,monospace;font-size:12px;color:var(--muted);margin-top:3px;word-break:break-all}
+  .item .meta{color:var(--muted);font-size:12px;margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 10px}
+  .price{font-weight:800;font-size:16px;white-space:nowrap}
+  .pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-block}
+  .pill.instk{background:rgba(61,220,151,.15);color:var(--accent)}
+  .pill.sold{background:rgba(255,107,107,.15);color:var(--danger)}
+  .pill.Cash{background:rgba(61,220,151,.15);color:var(--accent)}
+  .pill.UPI{background:rgba(124,156,255,.18);color:var(--upi)}
+  .pill.Udhaar{background:rgba(255,180,84,.18);color:var(--warn)}
+  .del{background:transparent;border:none;color:var(--danger);font-size:13px;font-weight:700;padding:4px}
+  .searchbar{margin-bottom:12px}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px}
+  .empty .big{font-size:40px;margin-bottom:8px}
+
+  .ledgername{font-weight:700;font-size:15px}
+  .ledgeramt{font-weight:800;font-size:17px}
+  .owed{color:var(--warn)} .clear{color:var(--accent)}
+
+  nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(22,39,63,.97);
+    backdrop-filter:blur(10px);border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom)}
+  .navinner{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+  nav button{background:transparent;border:none;color:var(--muted);padding:9px 0 8px;
+    font-size:10.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}
+  nav button svg{width:22px;height:22px}
+  nav button.on{color:var(--accent)}
+
+  .modal{position:fixed;inset:0;z-index:50;background:rgba(6,12,22,.9);display:none;
+    align-items:center;justify-content:center;padding:16px}
+  .modal.show{display:flex}
+  .modal .box{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    width:100%;max-width:420px;padding:16px;text-align:center}
+  #reader{width:100%;border-radius:12px;overflow:hidden;margin:10px 0}
+  .modal h3{margin-bottom:4px} .modal p{color:var(--muted);font-size:13px;margin:0 0 8px}
+
+  .toast{position:fixed;left:50%;bottom:calc(var(--tap) + 30px);transform:translateX(-50%);
+    background:var(--accent);color:var(--accent-ink);font-weight:700;padding:12px 20px;
+    border-radius:30px;z-index:60;opacity:0;pointer-events:none;transition:.25s;font-size:14px;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+  datalist{display:none}
+  .exportrow{display:flex;gap:10px;margin-top:4px}
+  .exportrow .btn{margin:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap brand">
+    <div class="logo">₹</div>
+    <div><h1>Dukaan Khata</h1><small>Mobile stock · sale · udhaar</small></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ================= HOME / DASHBOARD ================= -->
+  <div class="panel active" id="p-home">
+    <div class="stats">
+      <div class="stat green"><b id="s-stock">0</b><span>In stock</span></div>
+      <div class="stat"><b id="s-sold">0</b><span>Sold</span></div>
+      <div class="stat red"><b id="s-udhaar">₹0</b><span>Udhaar baaki</span></div>
+    </div>
+
+    <div class="card">
+      <div class="sectiontitle"><h2>Aaj ka hisaab</h2></div>
+      <div class="row" style="grid-template-columns:1fr 1fr">
+        <div class="stat" style="margin:0"><b id="s-today-sale">₹0</b><span>Aaj ki sale</span></div>
+        <div class="stat green" style="margin:0"><b id="s-today-profit">₹0</b><span>Aaj profit</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sectiontitle"><h2>Data backup</h2></div>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 10px">Sara data phone me hi safe hai. Backup file bana ke rakho — phone badle to import kar lena.</p>
+      <div class="exportrow">
+        <button class="btn sec" onclick="exportData()">Export</button>
+        <button class="btn sec" onclick="document.getElementById('importfile').click()">Import</button>
+      </div>
+      <input type="file" id="importfile" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+  </div>
+
+  <!-- ================= STOCK ================= -->
+  <div class="panel" id="p-stock">
+    <div class="card">
+      <div class="sectiontitle"><h2>Naya stock add karo</h2></div>
+      <div class="field">
+        <label>Model</label>
+        <input id="st-model" list="modellist" placeholder="e.g. Redmi 13C 6/128 Black">
+        <datalist id="modellist"></datalist>
+      </div>
+      <div class="row">
+        <div class="field"><label>SKU</label><input id="st-sku" placeholder="SKU / code"></div>
+        <div class="field"><label>Purchase price ₹</label><input id="st-price" type="number" inputmode="numeric" placeholder="0"></div>
+      </div>
+      <div class="field">
+        <label>IMEI</label>
+        <div class="imei-field">
+          <input id="st-imei" inputmode="numeric" placeholder="Scan ya type karo">
+          <button class="scanbtn" onclick="startScan('st-imei')">⛶</button>
+        </div>
+      </div>
+      <div class="field"><label>Supplier / dukaan (optional)</label><input id="st-supplier" placeholder="Kisse liya"></div>
+      <button class="btn" onclick="addStock()">Stock add karo</button>
+    </div>
+
+    <div class="searchbar"><input id="stock-search" placeholder="🔍 Model / IMEI / SKU dhundo" oninput="renderStock()"></div>
+    <div class="sectiontitle"><h2>Stock list</h2><span class="count" id="stock-count"></span></div>
+    <div id="stock-list"></div>
+  </div>
+
+  <!-- ================= SALE ================= -->
+  <div class="panel" id="p-sale">
+    <div class="card">
+      <div class="sectiontitle"><h2>Sale entry</h2></div>
+      <div class="field">
+        <label>IMEI bech rahe ho</label>
+        <div class="imei-field">
+          <input id="sl-imei" inputmode="numeric" placeholder="Scan / type — stock se auto milega" oninput="lookupImei()">
+          <button class="scanbtn" onclick="startScan('sl-imei')">⛶</button>
+        </div>
+        <div id="sl-match" style="font-size:12px;margin-top:6px;color:var(--muted)"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Customer naam</label><input id="sl-cust" list="custlist" placeholder="Kisko becha"><datalist id="custlist"></datalist></div>
+        <div class="field"><label>Phone (optional)</label><input id="sl-phone" inputmode="tel" placeholder="Mobile no."></div>
+      </div>
+      <div class="field"><label>Sale price ₹</label><input id="sl-price" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="field">
+        <label>Payment mode</label>
+        <div class="seg pay" id="paymode">
+          <button data-v="Cash" class="on" onclick="setPay(this)">💵 Cash</button>
+          <button data-v="UPI" onclick="setPay(this)">📲 UPI</button>
+          <button data-v="Udhaar" onclick="setPay(this)">📒 Udhaar</button>
+        </div>
+      </div>
+      <div class="field" id="paidwrap" style="display:none">
+        <label>Kitna paisa mila (baaki udhaar) ₹</label>
+        <input id="sl-paid" type="number" inputmode="numeric" placeholder="0">
+      </div>
+      <button class="btn" onclick="addSale()">Sale record karo</button>
+    </div>
+
+    <div class="searchbar"><input id="sale-search" placeholder="🔍 Customer / IMEI / model dhundo" oninput="renderSales()"></div>
+    <div class="sectiontitle"><h2>Sales</h2><span class="count" id="sale-count"></span></div>
+    <div id="sale-list"></div>
+  </div>
+
+  <!-- ================= LEDGER ================= -->
+  <div class="panel" id="p-ledger">
+    <div class="sectiontitle"><h2>Party ledger — udhaar khata</h2></div>
+    <p style="color:var(--muted);font-size:13px;margin:-4px 0 14px">Kisne kitna dena hai. Paisa aaye to "Payment mila" pe daba do.</p>
+    <div id="ledger-list"></div>
+  </div>
+
+</div>
+
+<!-- ============ BOTTOM NAV ============ -->
+<nav>
+  <div class="navinner">
+    <button class="on" data-tab="home" onclick="go('home',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button data-tab="stock" onclick="go('stock',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>Stock</button>
+    <button data-tab="sale" onclick="go('sale',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Sale</button>
+    <button data-tab="ledger" onclick="go('ledger',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Udhaar</button>
+  </div>
+</nav>
+
+<!-- ============ SCANNER MODAL ============ -->
+<div class="modal" id="scanmodal">
+  <div class="box">
+    <h3>IMEI scan karo</h3>
+    <p>Barcode ko camera ke saamne rakho</p>
+    <div id="reader"></div>
+    <button class="btn sec" onclick="stopScan()">Band karo</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- IndexedDB tiny wrapper ---------------- */
+const DB_NAME='dukaan_khata', STORES=['stock','sales'];
+let db;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,1);
+    r.onupgradeneeded=e=>{const d=e.target.result;
+      STORES.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id'})});};
+    r.onsuccess=e=>{db=e.target.result;res()};
+    r.onerror=e=>rej(e);
+  });
+}
+function tx(store,mode){return db.transaction(store,mode).objectStore(store);}
+function put(store,obj){return new Promise(r=>{tx(store,'readwrite').put(obj).onsuccess=()=>r();});}
+function del(store,id){return new Promise(r=>{tx(store,'readwrite').delete(id).onsuccess=()=>r();});}
+function all(store){return new Promise(r=>{tx(store,'readonly').getAll().onsuccess=e=>r(e.target.result||[]);});}
+
+let STOCK=[], SALES=[];
+async function load(){STOCK=await all('stock');SALES=await all('sales');renderAll();}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const todayStr=()=>new Date().toISOString().slice(0,10);
+const fmtDate=iso=>{const d=new Date(iso);return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'});};
+
+/* ---------------- Navigation ---------------- */
+function go(tab,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+tab).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  window.scrollTo(0,0);
+}
+
+/* ---------------- Toast ---------------- */
+let tT;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1800);}
+
+/* ---------------- Scanner ---------------- */
+let scanner=null, scanTarget=null;
+async function startScan(targetId){
+  scanTarget=targetId;
+  document.getElementById('scanmodal').classList.add('show');
+  scanner=new Html5Qrcode('reader');
+  const cfg={fps:12,qrbox:{width:260,height:130},
+    formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.CODE_39,Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.QR_CODE]};
+  try{
+    await scanner.start({facingMode:'environment'},cfg,txt=>{
+      const clean=(''+txt).replace(/\D/g,'');
+      document.getElementById(scanTarget).value=clean||txt;
+      if(scanTarget==='sl-imei')lookupImei();
+      navigator.vibrate&&navigator.vibrate(80);
+      toast('Scan hua ✓');stopScan();
+    },()=>{});
+  }catch(e){toast('Camera nahi khula — permission do');stopScan();}
+}
+async function stopScan(){
+  document.getElementById('scanmodal').classList.remove('show');
+  if(scanner){try{await scanner.stop();scanner.clear();}catch(e){}scanner=null;}
+}
+
+/* ---------------- STOCK ---------------- */
+async function addStock(){
+  const model=val('st-model'),sku=val('st-sku'),price=val('st-price'),imei=val('st-imei'),supplier=val('st-supplier');
+  if(!model){toast('Model daalo');return;}
+  if(!imei){toast('IMEI daalo');return;}
+  if(STOCK.some(s=>s.imei===imei)){toast('Ye IMEI pehle se stock me hai!');return;}
+  const item={id:uid(),model,sku,price:Number(price||0),imei,supplier,status:'in_stock',date:new Date().toISOString()};
+  STOCK.push(item);await put('stock',item);
+  ['st-model','st-sku','st-price','st-imei','st-supplier'].forEach(id=>document.getElementById(id).value='');
+  toast('Stock add ho gaya ✓');renderAll();
+}
+async function removeStock(id){
+  if(!confirm('Ye stock entry delete karein?'))return;
+  STOCK=STOCK.filter(s=>s.id!==id);await del('stock',id);renderAll();
+}
+function renderStock(){
+  const q=val('stock-search').toLowerCase();
+  const list=STOCK.filter(s=>s.status==='in_stock')
+    .filter(s=>!q||(s.model+s.imei+s.sku).toLowerCase().includes(q))
+    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const el=document.getElementById('stock-list');
+  document.getElementById('stock-count').textContent=list.length+' pcs';
+  if(!list.length){el.innerHTML=emptyBox('📦','Koi stock nahi. Upar se add karo.');return;}
+  el.innerHTML=list.map(s=>`
+    <div class="item"><div class="top">
+      <div><div class="model">${esc(s.model)}</div>
+        <div class="imei">IMEI: ${esc(s.imei)}</div>
+        <div class="meta">
+          ${s.sku?`<span>SKU: ${esc(s.sku)}</span>`:''}
+          ${s.supplier?`<span>From: ${esc(s.supplier)}</span>`:''}
+          <span>${fmtDate(s.date)}</span></div></div>
+      <div style="text-align:right">
+        <div class="price">${money(s.price)}</div>
+        <span class="pill instk">In stock</span><br>
+        <button class="del" onclick="removeStock('${s.id}')">Delete</button></div>
+    </div></div>`).join('');
+}
+
+/* ---------------- SALE ---------------- */
+let payMode='Cash';
+function setPay(el){
+  document.querySelectorAll('#paymode button').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');payMode=el.dataset.v;
+  document.getElementById('paidwrap').style.display=payMode==='Udhaar'?'block':'none';
+}
+function lookupImei(){
+  const imei=val('sl-imei');const m=document.getElementById('sl-match');
+  if(!imei){m.textContent='';return;}
+  const s=STOCK.find(x=>x.imei===imei&&x.status==='in_stock');
+  if(s){m.style.color='var(--accent)';m.textContent=`✓ ${s.model} — buy ${money(s.price)}`;}
+  else if(STOCK.some(x=>x.imei===imei)){m.style.color='var(--danger)';m.textContent='⚠ Ye IMEI already sold hai';}
+  else{m.style.color='var(--warn)';m.textContent='Stock me nahi mila — phir bhi bech sakte ho';}
+}
+async function addSale(){
+  const imei=val('sl-imei'),cust=val('sl-cust'),phone=val('sl-phone'),price=Number(val('sl-price')||0);
+  if(!cust){toast('Customer naam daalo');return;}
+  if(!price){toast('Sale price daalo');return;}
+  const s=STOCK.find(x=>x.imei===imei&&x.status==='in_stock');
+  let paid=price;
+  if(payMode==='Udhaar')paid=Number(val('sl-paid')||0);
+  const sale={id:uid(),imei,model:s?s.model:'(manual)',buyPrice:s?s.price:0,
+    price,paid,due:price-paid,cust,phone,pay:payMode,date:new Date().toISOString()};
+  SALES.push(sale);await put('sales',sale);
+  if(s){s.status='sold';await put('stock',s);}
+  ['sl-imei','sl-cust','sl-phone','sl-price','sl-paid'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sl-match').textContent='';
+  setPay(document.querySelector('#paymode button'));
+  toast('Sale record ho gayi ✓');renderAll();
+}
+async function removeSale(id){
+  if(!confirm('Ye sale delete karein? (stock wapas in-stock ho jayega)'))return;
+  const sale=SALES.find(x=>x.id===id);
+  if(sale){const s=STOCK.find(x=>x.imei===sale.imei&&x.status==='sold');
+    if(s){s.status='in_stock';await put('stock',s);}}
+  SALES=SALES.filter(x=>x.id!==id);await del('sales',id);renderAll();
+}
+function renderSales(){
+  const q=val('sale-search').toLowerCase();
+  const list=SALES.filter(s=>!q||(s.cust+s.imei+s.model).toLowerCase().includes(q))
+    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const el=document.getElementById('sale-list');
+  document.getElementById('sale-count').textContent=list.length+' sales';
+  if(!list.length){el.innerHTML=emptyBox('🧾','Abhi koi sale nahi.');return;}
+  el.innerHTML=list.map(s=>`
+    <div class="item"><div class="top">
+      <div><div class="model">${esc(s.cust)}</div>
+        <div class="imei">${esc(s.model)} · ${esc(s.imei||'no imei')}</div>
+        <div class="meta">
+          ${s.phone?`<span>📞 ${esc(s.phone)}</span>`:''}
+          <span>${fmtDate(s.date)}</span>
+          ${s.due>0?`<span class="owed">Baaki ${money(s.due)}</span>`:''}</div></div>
+      <div style="text-align:right">
+        <div class="price">${money(s.price)}</div>
+        <span class="pill ${s.pay}">${s.pay}</span><br>
+        <button class="del" onclick="removeSale('${s.id}')">Delete</button></div>
+    </div></div>`).join('');
+}
+
+/* ---------------- LEDGER ---------------- */
+function ledgerData(){
+  const map={};
+  SALES.filter(s=>s.due>0).forEach(s=>{
+    const k=s.cust+'|'+(s.phone||'');
+    if(!map[k])map[k]={cust:s.cust,phone:s.phone,due:0,ids:[]};
+    map[k].due+=s.due;map[k].ids.push(s.id);
+  });
+  return Object.values(map).sort((a,b)=>b.due-a.due);
+}
+async function clearDue(name,phone){
+  if(!confirm(name+' ka pura udhaar clear (paisa mil gaya)?'))return;
+  for(const s of SALES){if(s.cust===name&&(s.phone||'')===(phone||'')&&s.due>0){
+    s.paid=s.price;s.due=0;await put('sales',s);}}
+  toast('Udhaar clear ✓');renderAll();
+}
+function renderLedger(){
+  const data=ledgerData();const el=document.getElementById('ledger-list');
+  if(!data.length){el.innerHTML=emptyBox('✅','Koi udhaar baaki nahi. Sab clear!');return;}
+  el.innerHTML=data.map(d=>`
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div><div class="ledgername">${esc(d.cust)}</div>
+        ${d.phone?`<div class="imei">📞 ${esc(d.phone)}</div>`:''}
+        <div class="meta">${d.ids.length} sale(s)</div></div>
+      <div style="text-align:right">
+        <div class="ledgeramt owed">${money(d.due)}</div>
+        <button class="del" style="color:var(--accent)" onclick="clearDue('${esc(d.cust)}','${esc(d.phone||'')}')">Payment mila ✓</button>
+      </div></div>`).join('');
+}
+
+/* ---------------- Dashboard + datalists ---------------- */
+function renderAll(){
+  renderStock();renderSales();renderLedger();
+  const inStock=STOCK.filter(s=>s.status==='in_stock').length;
+  const sold=SALES.length;
+  const udhaar=SALES.reduce((a,s)=>a+(s.due||0),0);
+  document.getElementById('s-stock').textContent=inStock;
+  document.getElementById('s-sold').textContent=sold;
+  document.getElementById('s-udhaar').textContent=money(udhaar);
+  const t=todayStr();
+  const todaySales=SALES.filter(s=>s.date.slice(0,10)===t);
+  document.getElementById('s-today-sale').textContent=money(todaySales.reduce((a,s)=>a+s.price,0));
+  document.getElementById('s-today-profit').textContent=money(todaySales.reduce((a,s)=>a+(s.price-(s.buyPrice||0)),0));
+  // datalists
+  document.getElementById('modellist').innerHTML=[...new Set(STOCK.map(s=>s.model))].map(m=>`<option value="${esc(m)}">`).join('');
+  document.getElementById('custlist').innerHTML=[...new Set(SALES.map(s=>s.cust))].map(m=>`<option value="${esc(m)}">`).join('');
+}
+
+/* ---------------- Backup ---------------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify({stock:STOCK,sales:SALES,exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='dukaan-khata-'+todayStr()+'.json';a.click();toast('Backup file ban gayi ✓');
+}
+function importData(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    try{const d=JSON.parse(r.result);
+      if(!confirm('Import karne se purana data replace ho jayega. Aage badhein?'))return;
+      STOCK=d.stock||[];SALES=d.sales||[];
+      for(const s of STORES)await new Promise(res=>{tx(s,'readwrite').clear().onsuccess=res;});
+      for(const s of STOCK)await put('stock',s);
+      for(const s of SALES)await put('sales',s);
+      toast('Data import ho gaya ✓');renderAll();
+    }catch(err){toast('File galat hai');}
+  };r.readAsText(f);e.target.value='';
+}
+
+/* ---------------- helpers ---------------- */
+function val(id){return document.getElementById(id).value.trim();}
+function esc(s){return(''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function emptyBox(icon,txt){return`<div class="empty"><div class="big">${icon}</div>${txt}</div>`;}
+
+openDB().then(load);
+</script>
+</body>
+</html>
