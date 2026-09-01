@@ -1,0 +1,17 @@
+{
+  "name": "dukaan-khata",
+  "version": "1.0.0",
+  "description": "Mobile shop stock, sale and udhaar khata app",
+  "scripts": {
+    "add-android": "cap add android",
+    "sync": "cap sync",
+    "open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}
